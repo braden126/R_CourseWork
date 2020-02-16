@@ -1,0 +1,137 @@
+---
+title: "A5"
+author: "Braden Baker"
+date: "April 16, 2019"
+output: github_document
+---
+
+## Problem 1
+Load the cdc dataset.  Review my document "Data Analysis Example" from Canvas.  Use the cleaning and recoding I did to produce a clean and enhanced dataset for analysis. Do a summary to verify the correctness of your work.
+
+```{r}
+# Place your code here. Include load and library commands.
+library(tidyverse)
+library(gmodels)
+library(caret)
+
+load("cdc.Rdata")
+
+cdc$BMI = (cdc$weight*703)/(cdc$height)^2
+cdc$BMIDes = (cdc$wtdesire*703)/(cdc$height)^2
+cdc$DesActRatio = cdc$BMIDes/cdc$BMI
+cdc$BMICat = cut(cdc$BMI,c(18,5,24.9,29.9,39.9,200),labels = 
+       c("Underweight","Normal","Overweight",
+       "Obese","Morbidly Obese"),include.lowest=T)
+cdc$BMIDesCat = cut(cdc$BMIDes,c(18,5,24.9,29.9,39.9,200),labels = 
+       c("Underweight","Normal","Overweight",
+       "Obese","Morbidly Obese"),include.lowest=T)
+cdc$ageCat = cut_number(cdc$age,n=4,labels=c("18-31","32-43","44-57","58-99"))
+
+cdcmale <- cdc %>%
+  filter(gender=="m") %>%
+  mutate(gender=1)
+
+  
+
+cdcfemale <- cdc %>%
+  filter(gender=="f") %>%
+  mutate(gender=0)
+cdc <- rbind(cdcmale, cdcfemale)
+summary(cdc)
+head(cdc)
+tail(cdc)
+```
+
+
+## Problem 2
+Split the dataframe into train and test with a 70/30 ratio.  Do an str() on both train and test to verify that you have what you want.
+
+```{r}
+# Place your code here.
+
+nrows = nrow(cdc)
+
+set.seed(999)
+
+rows <- sample(nrows)
+
+cdc = cdc[rows,]
+
+split <- round(nrow(cdc) * .70)
+
+traincdc = cdc[1:split,]
+testcdc = cdc[(split+1):nrows,]
+
+nrow(traincdc)
+nrow(testcdc)
+nrow(cdc)
+str(traincdc)
+str(testcdc)
+```
+
+
+## Problem 3
+Create a logistic regression model which predicts gender based on height and weight using train. Measure its accuracy with a confusion matrix based on test.
+
+```{r}
+# Place your code here.
+cdcglm <- glm(gender~height+weight, data = traincdc, family = "binomial")
+summary(cdcglm)
+
+predcdc <- predict(cdcglm, newdata = testcdc, type = "response")
+predcdc <- predcdc > .5
+
+
+matrix <- table(testcdc$gender,predcdc)
+matrix
+accuracy <- sum(matrix[1,1]+matrix[2,2])/sum(matrix[1,1]+matrix[1,2]+matrix[2,1]+matrix[2,2])
+accuracy
+```
+
+
+## Problem 4
+Follow the same process as in Problem 3, but add the exercise and smoking variables. Did this improve on the accuracy you achieved in Problem 3.
+
+
+This did improve the score.
+
+```{r}
+# Place your code here.
+cdcglm <- glm(gender~height+weight + exerany + smoke100, data = traincdc, family = "binomial")
+summary(cdcglm)
+
+predcdc <- predict(cdcglm, newdata = testcdc, type = "response")
+predcdc <- predcdc > .5
+
+
+matrix <- table(testcdc$gender,predcdc)
+matrix
+accuracy <- sum(matrix[1,1]+matrix[2,2])/sum(matrix[1,1]+matrix[1,2]+matrix[2,1]+matrix[2,2])
+accuracy
+```
+
+
+## Problem 5
+One of the conclusions we reached in the original analysis is that women were more anxious to keep their weight low than men.  Formulate a variable that captures this and add it to the model. Explain the formulation you chose. Add this variable to the model in Problem 4. Did it improve your accuracy?
+
+
+I created the variable, wtdesireddif, which is the difference between weight desired and actual weight. I chose this as a variable because women tend to want to keep their weight lower, wtdesireddif would be a good way of capturing that as women will tend to have negative values more often than men. After adding this variable to the model the accuracy did improve. 
+
+```{r}
+# Place your code here.
+
+traincdc$wtdesiredif <- traincdc$wtdesire - traincdc$weight
+testcdc$wtdesiredif <- testcdc$wtdesire - testcdc$weight
+
+cdcglm <- glm(gender~height+weight + exerany + smoke100 + wtdesiredif, data = traincdc, family = "binomial")
+summary(cdcglm)
+
+predcdc <- predict(cdcglm, newdata = testcdc, type = "response")
+predcdc <- predcdc > .5
+
+
+matrix <- table(testcdc$gender,predcdc)
+matrix
+accuracy <- sum(matrix[1,1]+matrix[2,2])/sum(matrix[1,1]+matrix[1,2]+matrix[2,1]+matrix[2,2])
+accuracy
+```

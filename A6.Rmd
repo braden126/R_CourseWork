@@ -1,0 +1,122 @@
+---
+title: "A6"
+author: "Braden Baker"
+date: "4/26/2019"
+output: github_document
+---
+
+This assignment will make use of a published tutorial to build a knn model of gender classification for the cdc data using the caret package.
+
+## Load required libraries and the data.
+
+```{r}
+library(caret)
+library(e1071)
+```
+
+## Problem 1
+
+Load the cdc data, do the cleaning and transformations. Do not do the splitting. Run str() and summary to verify your results.
+
+```{r}
+load("cdc.Rdata")
+
+cdc$BMI = (cdc$weight*703)/(cdc$height)^2
+cdc$BMIDes = (cdc$wtdesire*703)/(cdc$height)^2
+cdc$DesActRatio = cdc$BMIDes/cdc$BMI
+cdc$BMICat = cut(cdc$BMI,c(18,5,24.9,29.9,39.9,200),labels = 
+       c("Underweight","Normal","Overweight",
+       "Obese","Morbidly Obese"),include.lowest=T)
+cdc$BMIDesCat = cut(cdc$BMIDes,c(18,5,24.9,29.9,39.9,200),labels = 
+       c("Underweight","Normal","Overweight",
+       "Obese","Morbidly Obese"),include.lowest=T)
+cdc$ageCat = cut_number(cdc$age,n=4,labels=c("18-31","32-43","44-57","58-99"))
+
+str(cdc)
+```
+
+## Problem 2
+Use caret to split the data into training and testing dataframes with a 70/30 split. Use set.seed(2343) to facilitate replicability. Run dim() on both to verify your results.
+
+```{r}
+nrows = nrow(cdc)
+
+rows <- sample(nrows)
+
+cdc = cdc[rows,]
+
+
+split <- round(nrow(cdc) * .7)
+
+traincdc = cdc[1:split,]
+testcdc = cdc[(split+1):nrows,]
+
+dim(traincdc)
+dim(testcdc)
+```
+
+
+## Problem 3
+
+Build a knn model, knn_fit, using height and weight to predict gender using the train function in caret. in the call to trainControl reduce number to 5 and repeats to 2. Then use the remainder of the code in the example to compute the confusion matrix and accuracy for this model.
+
+```{r}
+trctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 2)
+
+knn_fit <- train(gender ~ height+weight, data = traincdc, method = "knn",
+ trControl=trctrl,
+ preProcess = c("center", "scale"),
+ tuneLength = 10)
+
+predcdc <- predict(knn_fit, newdata = testcdc)
+matrix <- table(testcdc$gender,predcdc)
+matrix
+accuracy <- sum(matrix[1,1]+matrix[2,2])/sum(matrix[1,1]+matrix[1,2]+matrix[2,1]+matrix[2,2])
+accuracy
+```
+
+## Problem 4
+Repeat the process in Problem 3, adding exerany and smoke100 to the model.  Did this improve the accuracy of the model?
+
+This did improve the accuracy slighty.
+
+```{r}
+# Place your code here.
+trctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 2)
+
+knn_fit <- train(gender ~ height+weight+exerany+smoke100, data = traincdc, method = "knn",
+ trControl=trctrl,
+ preProcess = c("center", "scale"),
+ tuneLength = 10)
+
+predcdc <- predict(knn_fit, newdata = testcdc)
+matrix <- table(testcdc$gender,predcdc)
+matrix
+accuracy <- sum(matrix[1,1]+matrix[2,2])/sum(matrix[1,1]+matrix[1,2]+matrix[2,1]+matrix[2,2])
+accuracy
+```
+
+## Problem 5.
+Repeat Problem 4, adding a variable of your choice which captures the extra sensitivity of women to weight. Does this improve the accuracy?
+
+This improved the accuracy of the model, more than adding smoke100 and exerany.
+
+```{r}
+# Place your code here.
+traincdc$wtdesiredif <- traincdc$wtdesire - traincdc$weight
+testcdc$wtdesiredif <- testcdc$wtdesire - testcdc$weight
+
+trctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 2)
+
+knn_fit <- train(gender ~ height+weight+exerany+smoke100+wtdesiredif, data = traincdc, method = "knn",
+ trControl=trctrl,
+ preProcess = c("center", "scale"),
+ tuneLength = 10)
+
+predcdc <- predict(knn_fit, newdata = testcdc)
+matrix <- table(testcdc$gender,predcdc)
+matrix
+accuracy <- sum(matrix[1,1]+matrix[2,2])/sum(matrix[1,1]+matrix[1,2]+matrix[2,1]+matrix[2,2])
+accuracy
+```
+

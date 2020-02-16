@@ -1,0 +1,98 @@
+---
+title: "CSC 360 A2 Instructions"
+author: "Braden Baker"
+date: "March 22, 2019"
+output: github_document
+---
+
+This assignment is to produce a model of median household income using other variables in the countyComplete dataframe, which is in the openintro package.
+
+## Load the required libraries.
+
+```{r}
+library(tidyverse)
+library(openintro)
+```
+
+## Problem 1
+
+Run the commands glimpse() and summary() on the dataframe to understand the meaning of the variables and to verify the integrity of the data. The documentation in the openintro package is useful for understanding the variables.  
+
+```{r}
+# Place your code here.
+glimpse(countyComplete)
+str(countyComplete)
+```
+
+## Problem 2
+Use lm() to create a model to predict median household income using 5 other variables.  Do not include per capita income. Display a summary of the model.
+
+```{r}
+# Place your code here.
+
+mod1 <- lm(median_household_income~poverty+bachelors+persons_per_household+median_val_owner_occupied+mean_work_travel, data=countyComplete)
+summary(mod1)
+```
+
+## Problem 3
+Which 2 numbers in the summary output describe the overall performance of the model.  Use these two numbers in appropriate sentences to describe how well your model performed.
+
+Place your answer here.
+
+This model has a residual standard error of 6271, and the adjusted R-square is 0.7113  This shows that there is a postive correlation between the five chosen variables and median household income. 
+
+## Problem 4
+Examine the p-values for the individual coefficients of the model. Can you reject the hypothesis that the true coefficient value is zero in every case?  
+
+Place your answer here.
+
+We can reject the hypothesis that the true coefficient value is zero, which is the null hypothesis, because all the variables have the smallest possilble p-values, 2e-16, showing that there is likely a non-zero true coefficient value for each variable.
+
+## Problem 5
+Look at the signs of the coefficients. Do all of them have the signs that you would expect? Note any exceptions.
+
+Place your answer here.
+
+The only coefficent that has a sign I did not expect was bachelors, which is a positive I would not have thought that bachelors would have such a high coefficient for median household income.
+
+## Problem 6
+Construct forecasts of median household income for three different countys: Thurston County Washington, Los Angeles County California and Fayette County Kentucky.  Use the predict()  function. Describe how the forecasts compare with the actuals. 
+
+```{r}
+# Place your code here.
+Thurston <- countyComplete %>%
+  filter(name == "Thurston County" & state == "Washington")
+predictThurs <- predict(mod1, newdata = Thurston)
+predictThurs
+
+Los_Angeles <- countyComplete %>%
+  filter(name == "Los Angeles County" & state == "California")
+predictLA <- predict(mod1, newdata = Los_Angeles)
+predictLA
+
+Fayette <- countyComplete %>%
+  filter(name == "Fayette County" & state == "Kentucky")
+predictFay <- predict(mod1, newdata = Fayette)
+predictFay
+
+#The actual medians
+actualThurston <- countyComplete %>%
+  filter(name == "Thurston County" & state == "Washington") %>%
+  summarize(medT=median(median_household_income))
+actualThurston
+
+actualLos_Angeles <- countyComplete %>%
+  filter(name == "Los Angeles County" & state == "California") %>%
+  summarize(medLA=median(median_household_income))
+actualLos_Angeles
+
+actualFayette <- countyComplete %>%
+  filter(name == "Fayette County" & state == "Kentucky") %>%
+  summarize(medF=median(median_household_income))
+actualFayette
+
+```
+
+Put your verbal answer here.
+
+The model predicts the median for Thurston to be 58283.8 , but is actually 60930, the difference is very accurate and within the residual standard error. Los Angeles is predicted to be 65379.7, but is acutally 55476, the difference is over the residual standard error. I believe the model is so far of in its prediction for LA because LA has a much larger population. Using variables that account for population may make the results more accurate. Fayyete is predicted to be 48822.7, and is actually 47469, the difference is fairly small and within the residual standard error.

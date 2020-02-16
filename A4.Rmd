@@ -1,0 +1,81 @@
+---
+title: "A4"
+author: "Braden Baker"
+date: "4/10/2019"
+output: github_document
+---
+
+This assignment is based on the Kaggle kernel by Erik Bruin, which we have been examining in class.
+
+## Problem 1
+Create a folder ames somewhere on your computer and make it an R project. If you are using Rstudio cloud, create a new project and name it ames.
+
+Create three subfolders: Input, Output, and Code. In the cloud, use the terminal and the mkdir command. To document your completion of this task, take a screenshot showing the results of your efforts. Save this rmd file in the code folder.
+
+## Problem 2
+Download the file all.rdata from Moodle. This file contains the updated train and test files which Bruin started with.  You can identify the test records by the NA values in the price variable. All of the cleaning, imputation and recoding done in Bruin's kernel have been completed. This file is suitable for constructing a model. Separate this file into train and test components. To demonstrate your success, do a glimpse of the test dataframe.
+
+```{r}
+# Place your code here.
+
+load(file="a4data.Rdata")
+
+library(tidyverse)
+library(openintro)
+
+trainames <- all %>%
+  filter(!is.na(SalePrice))
+
+testames <- all %>%
+  filter(is.na(SalePrice))
+
+
+glimpse(testames)
+
+```
+
+
+
+
+
+## Problem 3
+Build  a regression model to predict sale price based on variables you choose after reading Bruin's document. You need to include at least 4 variables. Two of these variables must have been altered in Bruin's cleanup work. Describe the variables. In the explanation of the variables alterd by Bruin, describe what he did.
+
+Display a summary of your regression model.
+
+
+Fence was one of the variables Bruin changed. Fence was entered into the datasets with many NA values but the NA values have significance in this situation, so all the NA's were changed to the factor, "None". This change was made by selecting all the rows with an NA value using dollar and brackets, then entering "None" into those rows.
+
+Bruin also changed the month sold variable, because it was coded as a numeric variable. Months should actually be a factor because they are not actually numbers that have any significance. This change was made by using, "as.factor" on the column. 
+
+```{r}
+# Place your code here.
+modames <- lm(SalePrice ~ OverallQual + GrLivArea + MoSold + Fence, data=trainames)
+summary(modames)
+```
+
+## Problem 4
+Use predict() to make predicted sale prices for the test dataframe. Convert these predictions to a form suitable for submission to Kaggle. Then do the submission. Do a screenshot of your submission report from Kaggle and post it here.
+
+
+```{r}
+# Place your code here.
+
+predames <- predict(modames, newdata=testames)
+
+testames$Id <- seq.int(nrow(testames)) 
+testames <- testames %>% 
+  mutate(Id = Id+1460)
+
+submission <- cbind(testames, predames)
+
+readysubmission <- submission %>%
+  select(Id, predames)
+
+finalsubmission <- readysubmission %>%
+  rename(SalePrice = predames)
+
+head(finalsubmission)
+
+
+```

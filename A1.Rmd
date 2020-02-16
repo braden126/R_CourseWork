@@ -1,0 +1,79 @@
+---
+title: "A1"
+author: "Braden Baker"
+date: "3/6/2019"
+output: github_document
+---
+
+## The Question:
+
+What are the basic facts concerning birth rates in the US? Is the US in danger of shrinking?
+
+## The Data
+
+This assignment uses natality data from https://wonder.cdc.gov/natality.html.
+
+## Problem 1:
+Obtain a file of data from the site for births between 2007 and 2017. Specify groupings by maternal age (9), State and year. Use your text editor to remove all of the blank spaces in the column header. Import this data into your R session using the readr package. Note the warning messages.  
+
+What issues do you need to deal with before analyzing this data?
+
+## Problem 2:
+Use dplyr to clean up the data (remove any NA values). Remove most of the variables. You should leave only State, Year, Age, Fpop, Births, and Rate. Make sure that all of your numerical data is recognized as such by R.  Run a summary on your dataframe to verify your work.
+
+```{r}
+# Insert your R code here.
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(plotly)
+load("A1.RData")
+
+NatalityA12007_2017 <- Natality_2007_2017 %>%
+  filter(Rate != "Not Available" & Fpop != "Not Available") %>%
+  mutate(Fpop = as.numeric(Fpop), Rate = as.numeric(Rate)) %>%
+  select(State, Year, Age, Fpop, Births, Rate)
+
+summary(NatalityA12007_2017)
+```
+
+## Problem 3:
+Repeat the steps above for the other two periods of data available.  Make sure that all three of your dataframes have the same variable names and that the variables are consistent in type. Use rbind to combine all of the data into a single dataframe named allBirths. Run a summary to verify your results.
+
+```{r}
+# Insert your code here.
+
+NatalityA12003_2006 <- Natality_2003_2006 %>%
+  filter(Rate != "Not Available" & Fpop != "Not Available") %>%
+  mutate(Fpop = as.numeric(Fpop), Rate = as.numeric(Rate)) %>%
+  select(State, Year, Age, Fpop, Births, Rate)
+
+allBirths <- bind_rows(NatalityA12007_2017, NatalityA12003_2006)
+summary(allBirths)
+```
+
+## Problem 4:
+Use dplyr to produce a dataframe, fertHistory, with one row for every combination of State and Year. The variables in the dataframe are: State, Year, and TFR.
+
+```{r}
+
+fertHistory <- allBirths %>%
+  group_by(State, Year) %>%
+  summarize(TFR=sum(Rate)) %>%
+  mutate(TFR=(TFR/1000)*5) %>%           
+  select(State, Year, TFR)
+
+head(fertHistory)
+
+```
+
+## Problem 5:
+Use ggplot2 to produce a scatterplot with Year in the explanatory role and TFR in the response role. Add a loess curve to the plot.
+```{r}
+
+ggplot(fertHistory, aes(x=Year, y=TFR))+geom_point(alpha=0.3)+geom_smooth(method="loess")
+```
+## Problem 6:
+Write a paragraph describing the facts revealed by the graphic.
+
+This graphic reaveals that from 2003 to 2006 the total fertility rate was rising, which peaked in 2006. Since then, it has been steadily falling. The biggest fall in total fertility appears to occur from 2008 to 2010. It is also intereasting to note that it appears that around 2008, both the high and low outliers started to get closer to the bulk of the data.  

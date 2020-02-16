@@ -1,0 +1,82 @@
+---
+title: "A3"
+author: "Braden Baker"
+date: "3/31/2019"
+output: github_document
+---
+
+## Problem 1
+I have placed a copy of the Ames Iowa real estate data in Moodle. Download this file and load it into your R session. Then run str() on it to make sure you have the data and know the names of the variables.
+
+```{r}
+#Place your R code here.
+library(tidyverse)
+library(openintro)
+load("A3workspace.RData")
+
+str(ames)
+
+```
+
+## Problem 2
+Use the code in the document "Train Test" in Moodle to create Train and Test subsets based on random sampling with a 75/25 split. Verify that the numbers of observations in Train and Test add up to the number of observations in ames and that the split is correct.
+```{r}
+#Place your R code here.
+nrows = nrow(ames)
+
+set.seed(999)
+
+rows <- sample(nrows)
+
+ames = ames[rows,]
+
+head(ames)
+
+split <- round(nrow(ames) * .75)
+
+trainA = ames[1:split,]
+testA = ames[(split+1):nrows,]
+
+nrow(trainA)
+nrow(testA)
+nrow(ames)
+
+```
+
+## Problem 3
+Select any three variables to serve as predictors of sale price. Build a regression model based on Train using these variables. Examine the coefficient signs and p-values to make sure you have a model that would earn the approval of an econometrician. If the results are not satisfactory, try some other variables.
+
+Finally, display the summary, and report your residual standard error and R-squared.
+
+```{r}
+#Place your R code here.
+#Bedroom.AbvGr
+
+modA <- lm(SalePrice~Fireplaces+ Lot.Area + Year.Built, data=trainA)
+summary(modA)
+```
+
+
+## Problem 4
+Use predict() to build a vector pred for the cases in Test. Create measures of performance to match the residual standard error and R-Square from the Train results. Use these four numbers to compare how well the model performed on Test with how well it performed on Train.
+
+```{r}
+#Place your R code here.
+
+predA <- predict(modA, newdata = testA)
+
+Review <- cbind(testA,predA) %>% 
+  select(SalePrice, predA, Lot.Area, Year.Built, Fireplaces ) %>% 
+  mutate(res = SalePrice - predA)
+head(Review)
+
+sstot = sum((Review$SalePrice - mean(Review$SalePrice))^2)
+ssres = sum(Review$res^2)
+rsq = 1 - (ssres/sstot)
+rsq
+ResStandErrorPredA <- sd(Review$res)
+ResStandErrorPredA
+
+summary(Review$predA)
+summary(Review$SalePrice)
+```
