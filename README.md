@@ -14,6 +14,6 @@ This repository holds all the assignemtns completed for data analysis classes
           
 •	A4.md - Improving the linear regression model used in A3
 
-•	A5.md - Practicing logistic regression a CDC health information dataset
+•	A5.md - Practicing logistic regression on a CDC health information dataset
 
 •	A6.md - Practicing k-nearest neighbors modeling using the caret package
